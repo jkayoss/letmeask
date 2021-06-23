@@ -1,60 +1,126 @@
-import { Link } from 'react-router-dom';
-import { FormEvent, useState } from 'react';
+import { useParams } from 'react-router-dom';
 
-import illustrationImg from '../assets/images/illustration.svg';
+import { ButtonHTMLAttributes, FormEvent, useState } from 'react';
 import logoImg from '../assets/images/logo.svg';
-import googleIconImg from '../assets/images/google-icon.svg';
 import { Button } from '../components/Button';
-import '../styles/auth.scss';
+import { RoomCode } from '../components/RoomCode';
+import '../styles/room.scss';
 import { useAuth } from '../hooks/useAuth';
 import { database } from '../services/firebase';
+import { useEffect } from 'react';
+
+type RoomParams = {
+    id: string;
+}
+
+type Question = {
+    id: string,
+    author: {
+        name: string,
+        avatar: string,
+    }
+    content: string,
+    isAnswered: boolean,
+    isHighlighted: boolean
+}
+
+type FirebaseQuestions = Record<string, {
+    author: {
+        name: string,
+        avatar: string,
+    }
+    content: string,
+    isAnswered: boolean,
+    isHighlighted: boolean
+}>
+
 export function Room() {
-    const { user } = useAuth();
+    const { user }  = useAuth();
+    const params = useParams<RoomParams>();
+    const [newQuestion, setNewQuestion] = useState('');
+    const [questions, setQuestions] = useState<Question[]>([]);
+    const [title, setTitle] = useState('');
+    const roomId = params.id;
 
-    const [newRoom, setNewRoom] = useState('');
+    useEffect(() => {
+        const roomRef = database.ref(`rooms/${roomId}`);
+        roomRef.on('value', room => {
+            const databaseRoom = room.val();
+            const firebaseQuestions: FirebaseQuestions = databaseRoom.questions ?? {};
+            const parsedQuestions = Object.entries(firebaseQuestions).map(([key, value]) => {
+                return {
+                    id: key,
+                    content: value.content,
+                    author: value.author,
+                    isHighlighted: value.isHighlighted,
+                    isAnswered: value.isAnswered,
+                }
+            })  
+            setTitle(databaseRoom.title);
+            setQuestions(parsedQuestions)  
+        })
+    }, [roomId]);
 
-    async function handleCreateRoom(event: FormEvent) {
+    async function handleSendQuestion(event: FormEvent) {
         event.preventDefault();
-        if(newRoom.trim() === '') {
+        if(newQuestion.trim() === '') {
             return;
         }
 
-        const roomRef = database.ref('rooms');
-        const firebaseRoom = await roomRef.push({
-            title: newRoom,
-            authorId: user?.id,
-        });
+        if(!user) {
+            throw new Error('Você precisa estar logado');
+        }
+
+        const question = {
+            content: newQuestion,
+            author: {
+                name: user.name,
+                avatar: user.avatar,
+            },
+            isHighlighted: false,
+            isAnswered: false
+        };
+
+        await database.ref(`rooms/${roomId}/questions`).push(question);
+        setNewQuestion('');
     }
 
-    return (
-
-        
-
-        <div id="page-auth">
-            <aside>
-                <img src={illustrationImg} alt="imagem sobre autenticação" />
-                <strong>Crie salas de dúvidas ao vivo</strong>
-                <p>Tire as dúvidas da audiência em tempo real</p>
-            </aside>
-            <main>
-                <div className="main-content">
-                    <img src={logoImg} alt="logo do letmeask" />
-                    
-                    <h2>Criar uma nova sala</h2>
-                    <form onSubmit={handleCreateRoom}>
-                        <input
-                            type="text"
-                            placeholder="Nome da sala"
-                            onChange={event => setNewRoom(event.target.value)}
-                            value={newRoom}
-                        />
-                        <Button type="submit">
-                            Criar sala
-                        </Button>
-                    </form>
-                    <p>Quer entrar em uma sala existente? <Link to="/">Clique aqui</Link></p>
+    return(
+        <div id="page-room">
+            <header>
+                <div className="content">
+                    <img src={logoImg} alt="logotipo do letmeask" />
+                    <RoomCode code={roomId}/>
                 </div>
+            </header>
+
+            <main className="content">
+                <div className="room-title">
+                    <h1>Sala {title}</h1>
+                    { questions.length > 0 && <span>{questions.length} perguntas</span> }
+                 </div>
+
+                <form onSubmit={handleSendQuestion}>
+                    <textarea 
+                      placeholder="O que você quer perguntar?"
+                      onChange={event => setNewQuestion(event.target.value)}
+                      value={newQuestion}
+                    />
+
+                    <div className="form-footer">
+                        { user ? (
+                            <div className="user-info">
+                                <img src={user.avatar} alt={user.name} />
+                                <span>{user.name}</span>
+                            </div>
+                        ) : (
+                        <span>Para enviar uma pergunta, <button>faça seu login.</button></span>
+                        ) }
+                        
+                        <Button type="submit" disabled={!user}>Enviar Pergunta</Button>
+                    </div>
+                </form>
             </main>
         </div>
-    )
+    );
 }
