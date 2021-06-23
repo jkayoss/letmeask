@@ -8,7 +8,7 @@ import { Button } from '../components/Button';
 import '../styles/auth.scss';
 import { useAuth } from '../hooks/useAuth';
 import { database } from '../services/firebase';
-export function NewRoom() {
+export function Room() {
     const { user } = useAuth();
 
     const [newRoom, setNewRoom] = useState('');
