@@ -4,6 +4,8 @@
 
 Aplicação desenvolvida na Next Level Week Together da Rocketseat 🚀
 
+![alt text](https://i.imgur.com/cUDDut1.png)
+
 ## Conhecimentos adquiridos
 
 - **Fundamentos de ReactJS** (Context API, Hooks, React Router, Componentes);
