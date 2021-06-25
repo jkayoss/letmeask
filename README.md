@@ -4,7 +4,7 @@
 
 Aplicação desenvolvida na Next Level Week Together da Rocketseat 🚀
 
-![alt text](https://i.imgur.com/cUDDut1.png)
+![alt text](https://i.imgur.com/Rd8mcWU.png)
 
 ## Conhecimentos adquiridos
 
