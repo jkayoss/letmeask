@@ -20,7 +20,7 @@ Aplicação desenvolvida na Next Level Week Together da Rocketseat 🚀
 
 # 🚀 Próximos Níveis:
 
-- [ ] Layout Responsivo;
+- [x] Layout Responsivo;
 - [ ] Modo Escuro;
 
 </div>
